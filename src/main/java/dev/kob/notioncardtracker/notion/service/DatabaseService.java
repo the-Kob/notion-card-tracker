@@ -64,7 +64,7 @@ public class DatabaseService {
             pages.addAll(db.getBody().getPages());
         }
 
-        // Remove archived pageson
+        // Remove archived page son
         for (Page page: pages) {
             if(page.getArchived()) {
                 pages.remove(page);
@@ -72,6 +72,22 @@ public class DatabaseService {
         }
 
         return pages;
+    }
+
+    public Page queryPage(String pageId) {
+        String url = notionConfigProps.apiUrl() + "/v1/pages/" + pageId;
+        log.info("Querying page: {}", url);
+
+        ResponseEntity<Page> pg = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                new HttpEntity<>(getDefaultHeaders()),
+                Page.class
+        );
+
+        Page page = pg.getBody();
+
+        return page;
     }
 
     public List<Page> queryCards(String databaseId) {
@@ -107,6 +123,8 @@ public class DatabaseService {
 
         return response.getBody().getId();
     }
+
+
 
     private HttpHeaders getDefaultHeaders() {
         HttpHeaders headers = new HttpHeaders();

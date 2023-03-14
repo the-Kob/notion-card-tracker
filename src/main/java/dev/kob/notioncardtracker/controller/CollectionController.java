@@ -1,10 +1,13 @@
 package dev.kob.notioncardtracker.controller;
 
+import dev.kob.notioncardtracker.model.Card;
 import dev.kob.notioncardtracker.model.Collection;
 import dev.kob.notioncardtracker.notion.NotionClient;
 import dev.kob.notioncardtracker.notion.config.NotionConfigProperties;
 import dev.kob.notioncardtracker.notion.model.Page;
+import dev.kob.notioncardtracker.service.CardsService;
 import dev.kob.notioncardtracker.service.CollectionsService;
+import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,11 +26,18 @@ public class CollectionController {
         this.notionConfigProperties = notionConfigProperties;
     }
 
-    @GetMapping
+    @GetMapping("/all")
     public List<Collection> findCollections() {
         List<Page> pages = client.databases.query(notionConfigProperties.databaseId());
 
         return pages.stream().map(CollectionsService::mapPageToCollection).toList();
+    }
+
+    @GetMapping("/{id}")
+    public Collection findCollection(@PathVariable String id) {
+        Page page = client.databases.queryPage(id);
+
+        return CollectionsService.mapPageToCollection(page);
     }
 
     @PostMapping
@@ -50,6 +60,20 @@ public class CollectionController {
         }
 
         return ResponseEntity.ok(collection);
+    }
+
+    @GetMapping("/{id}/cards/all")
+    public List<Card> findCardsFromDatabase(@PathVariable String id) {
+        List<Page> pages = client.databases.queryCards(id);
+
+        return pages.stream().map(CardsService::mapPageToCard).toList();
+    }
+
+    @GetMapping("/{id}/cards/{c_id}")
+    public Card findCardFromDatabase(@PathVariable String id, @PathVariable String c_id) {
+        //TODO
+
+        return null;
     }
 
     private Map<String, Object> toJsonCollection(Map<String, String> params) {
@@ -91,6 +115,15 @@ public class CollectionController {
         properties.put("Complete", complete);
 
         jsonCollection.put("properties", properties);
+
+        Map<String, Object> cover = new HashMap<>();
+        Map<String, Object> external = new HashMap<>();
+        external.put("url", params.get("cover"));
+
+        cover.put("type", "external");
+        cover.put("external", external);
+
+        jsonCollection.put("cover", cover);
 
         return jsonCollection;
     }
